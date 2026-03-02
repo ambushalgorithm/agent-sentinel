@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  sentinel:
+    build:
+      context: ./sentinel
+    image: agent-sentinel-sentinel:latest
+    container_name: sentinel
+    ports:
+      - "8080:8080"
+    volumes:
+      - sentinel_logs:/logs
+    environment:
+      - LOG_DIR=/logs
+      - PORT=8080
+    networks:
+      - agent-sentinel-network
+
+  attack-lab:
+    build:
+      context: ./attack-lab
+    image: agent-sentinel-attack-lab:latest
+    container_name: attack-lab
+    environment:
+      - PORT=3000
+      - SKILL_REGISTRY_URL=http://skill-registry:8443
+    networks:
+      - agent-sentinel-network
+
+  skill-registry:
+    build:
+      context: ./payload-server
+    image: agent-sentinel-skill-registry:latest
+    container_name: skill-registry
+    ports:
+      - "8443:8443"
+    environment:
+      - PORT=8443
+      - SENTINEL_URL=http://sentinel:8080
+      - PUBLIC_SENTINEL_URL=https://sentinel.qa1.ambushalgorithm.com
+      - PUBLIC_SENTINEL_URL=https://sentinel.qa1.ambushalgorithm.com
+    networks:
+      - agent-sentinel-network
+
+  victim-agent:
+    build:
+      context: ./victim-agent
+    image: agent-sentinel-victim-agent:latest
+    container_name: victim-agent
+    depends_on:
+      - sentinel
+      - attack-lab
+      - skill-registry
+    environment:
+      - DEMO_PAGE=${DEMO_PAGE:-/setup/basic}
+      - ATTACK_LAB_URL=http://attack-lab:3000
+      - SKILL_REGISTRY_URL=http://skill-registry:8443
+      - SENTINEL_URL=http://sentinel:8080
+    networks:
+      - agent-sentinel-network
+
+networks:
+  agent-sentinel-network:
+    driver: bridge
+
+volumes:
+  sentinel_logs:

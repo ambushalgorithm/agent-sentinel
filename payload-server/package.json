@@ -1,0 +1,20 @@
+{
+  "name": "payload-server",
+  "version": "1.0.0",
+  "description": "Serves install scripts for attack scenarios",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest",
+    "test:unit": "jest --testPathPattern='test/unit'",
+    "test:e2e": "jest --testPathPattern='test/e2e'",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}

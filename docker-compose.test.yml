@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  sentinel:
+    build:
+      context: ./sentinel
+      dockerfile: ../Dockerfile.service
+    image: agent-sentinel-service:latest
+    container_name: sentinel
+    ports:
+      - "8080:8080"
+    volumes:
+      - sentinel_logs:/logs
+    networks:
+      - agent-sentinel-network
+    environment:
+      - LOG_DIR=/logs
+      - PORT=8080
+
+  attack-lab:
+    build:
+      context: ./attack-lab
+      dockerfile: ../Dockerfile.service
+    image: agent-sentinel-service:latest
+    container_name: attack-lab
+    networks:
+      - agent-sentinel-network
+    environment:
+      - PORT=3000
+
+  payload-server:
+    build:
+      context: ./payload-server
+      dockerfile: ../Dockerfile.service
+    image: agent-sentinel-service:latest
+    container_name: payload-server
+    networks:
+      - agent-sentinel-network
+    environment:
+      - PORT=4000
+      - SENTINEL_URL=http://sentinel:8080
+
+  victim-agent:
+    build:
+      context: ./victim-agent
+      dockerfile: ../Dockerfile.service
+    image: agent-sentinel-service:latest
+    container_name: victim-agent
+    depends_on:
+      - sentinel
+      - attack-lab
+      - payload-server
+    networks:
+      - agent-sentinel-network
+    environment:
+      - DEMO_PAGE=${DEMO_PAGE:-/setup-basic.html}
+      - ATTACK_LAB_URL=http://attack-lab:3000
+      - PAYLOAD_SERVER_URL=http://payload-server:4000
+      - SENTINEL_URL=http://sentinel:8080
+    # Run once and exit (for basic demo)
+    command: ["node", "index.js"]
+
+networks:
+  agent-sentinel-network:
+    driver: bridge
+
+volumes:
+  sentinel_logs:
